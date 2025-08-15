@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ИЗМЕНЕНИЕ ЗДЕСЬ -->
     <title>Качаем бингу - Изучайте бинго-факты интерактивно</title>
     <meta name="description" content="Интерактивный сайт для изучения бинго-фактов с автоматической синхронизацией данных">
     
@@ -498,13 +497,25 @@
                     if (card) { const index = parseInt(card.dataset.factIndex); this.showModal(this.getCurrentPageFacts()[index]); }
                 });
             }
+            
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             searchFacts(query) {
                 this.currentPage = 1;
-                if (!query) { if (this.currentTheme) { this.currentFacts = [...this.factsData[this.currentTheme]]; this.renderFacts(this.currentTheme); } return; }
+                if (!query) {
+                    if (this.currentTheme) {
+                        this.currentFacts = [...this.factsData[this.currentTheme]];
+                        this.renderFacts(this.currentTheme);
+                    }
+                    return;
+                }
                 const lowerCaseQuery = query.toLowerCase();
-                this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
+                this.currentFacts = this.allFacts.filter(fact => 
+                    fact.title.toLowerCase().includes(lowerCaseQuery) || 
+                    fact.description.toLowerCase().includes(lowerCaseQuery)
+                );
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
+            
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
                 this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
