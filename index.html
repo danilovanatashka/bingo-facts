@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Качаем бингу - Изучайте историю интерактивно</title>
+    <meta name="description" content="Интерактивный сайт для изучения исторических фактов с автоматической синхронизацией данных">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    
+    <style>
+        :root {
+            --white-bg: #FFFFFF;
+            --navy: #001219;
+            --blue: #005F73;
+            --teal: #0A9396;
+            --light-teal: #94D2BD;
+            --cream: #E9D8A6;
+            --yellow: #EE9B00;
+            --orange: #CA6702;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--white-bg);
+            color: #000000;
+            line-height: 1.6;
+        }
+
+        .header {
+            background-color: var(--white-bg);
+            padding: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0, 18, 25, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            height: 80px;
+            width: auto;
+            max-width: 120px;
+            display: none;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        .logo.visible {
+            display: block;
+        }
+
+        .site-title {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: #000000;
+            margin: 0;
+        }
+
+        .navigation {
+            background-color: var(--white-bg);
+            padding: 1rem 0;
+            position: sticky;
+            top: 113px;
+            z-index: 99;
+            border-bottom: 1px solid var(--light-teal);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .theme-tabs {
+            display: grid;
+            grid-auto-flow: column; 
+            grid-template-rows: repeat(2, auto); 
+            grid-auto-columns: minmax(200px, auto); 
+            gap: 1rem;
+            overflow-x: auto; 
+            overflow-y: hidden; 
+            padding-bottom: 1rem; 
+        }
+
+        .theme-tabs::-webkit-scrollbar { height: 8px; }
+        .theme-tabs::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 4px; }
+        .theme-tabs::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+        .theme-tabs::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+
+        .theme-tab {
+            background: var(--white-bg);
+            border: 2px solid var(--blue);
+            color: var(--blue);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+            /* Убрали white-space: nowrap, чтобы текст мог переноситься */
+            word-break: break-word; /* Помогает переносить длинные слова, если нужно */
+            min-height: 60px; /* Минимальная высота для выравнивания */
+        }
+
+        .theme-tab:hover {
+            background-color: var(--blue);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 95, 115, 0.3);
+        }
+
+        .theme-tab.active {
+            background-color: var(--orange);
+            color: white;
+            border-color: var(--orange);
+            box-shadow: 0 4px 15px rgba(202, 103, 2, 0.3);
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .search-container {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--light-teal);
+            border-radius: 12px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(10, 147, 150, 0.1);
+        }
+
+        .theme-title {
+            text-align: center;
+            color: #000000;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+
+        .facts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .fact-card {
+            background-color: var(--white-bg);
+            border: 2px solid var(--light-teal);
+            border-radius: 16px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* Центрируем контент по вертикали */
+            min-height: 80px; /* Задаем минимальную высоту для единообразия */
+        }
+
+        .fact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(148, 210, 189, 0.3);
+            border-color: var(--teal);
+        }
+
+        .fact-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #000000;
+            margin: 0;
+            line-height: 1.3;
+            text-align: center;
+            /* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
+            word-break: break-word; /* Разрешаем перенос длинных слов */
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 18, 25, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; padding: 1rem;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal-content {
+            background-color: var(--white-bg);
+            border-radius: 20px; padding: 2rem;
+            max-width: 600px; width: 100%; max-height: 80vh;
+            overflow-y: auto; position: relative;
+            transform: scale(0.9); transition: transform 0.3s ease;
+            scrollbar-width: thin; scrollbar-color: var(--teal) var(--light-teal);
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+        .modal-content::-webkit-scrollbar { width: 8px; }
+        .modal-content::-webkit-scrollbar-track { background: var(--light-teal); border-radius: 4px; }
+        .modal-content::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 4px; }
+        .modal-content::-webkit-scrollbar-thumb:hover { background: var(--blue); }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem; padding-bottom: 1rem;
+            border-bottom: 2px solid var(--light-teal);
+        }
+        .modal-title { font-size: 1.5rem; font-weight: 600; color: #000000; margin: 0; }
+        .close-btn {
+            background: none; border: none; font-size: 2rem; color: var(--blue);
+            cursor: pointer; padding: 0; width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; transition: all 0.3s ease;
+        }
+        .close-btn:hover { background-color: var(--light-teal); color: var(--navy); }
+        .modal-description { color: #000000; font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; }
+        .modal-source { padding-top: 1rem; border-top: 1px solid var(--light-teal); }
+        .source-link {
+            color: var(--teal); text-decoration: none; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            transition: color 0.3s ease;
+        }
+        .source-link:hover { color: var(--blue); }
+        .source-link::after { content: '↗'; font-size: 1.1em; }
+
+        .loading { text-align: center; padding: 3rem; color: var(--blue); font-size: 1.1rem; }
+        .loading::after { content: '...'; animation: dots 1.5s infinite; }
+        @keyframes dots { 0%, 20% { content: '...'; } 40% { content: '..'; } 60% { content: '.'; } 80%, 100% { content: ''; } }
+        .no-data { text-align: center; padding: 3rem; color: var(--blue); font-size: 1.1rem; }
+
+        .pagination-container {
+            display: flex; justify-content: center; align-items: center;
+            gap: 1rem; margin: 2rem 0; flex-wrap: wrap;
+        }
+        .pagination-info { color: var(--blue); font-weight: 500; margin: 0 1rem; }
+        .pagination-btn {
+            background: var(--white-bg); border: 2px solid var(--teal); color: var(--teal);
+            padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+            font-family: 'Montserrat', sans-serif; font-weight: 500;
+            transition: all 0.3s ease; min-width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pagination-btn:hover:not(:disabled) { background: var(--teal); color: white; }
+        .pagination-btn.active { background: var(--teal); color: white; }
+        .pagination-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: var(--light-teal); color: var(--light-teal); }
+
+        .items-per-page { display: flex; align-items: center; gap: 0.5rem; color: var(--blue); font-weight: 500; }
+        .items-per-page select {
+            padding: 0.25rem 0.5rem; border: 2px solid var(--light-teal); border-radius: 6px;
+            font-family: 'Montserrat', sans-serif; background: white; color: var(--blue);
+        }
+
+        @media (max-width: 768px) {
+            .header-content, .nav-container { padding: 0 1rem; }
+            .logo { height: 60px; max-width: 80px; }
+            .site-title { font-size: 1.5rem; }
+            .main-content { padding: 1rem; }
+            .facts-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .fact-card { padding: 1rem; }
+            .modal-content { margin: 1rem; padding: 1.5rem; }
+            .pagination-container { gap: 0.5rem; }
+            .pagination-btn { min-width: 35px; height: 35px; padding: 0.25rem 0.5rem; }
+        }
+        @media (max-width: 480px) {
+            .logo { height: 50px; max-width: 60px; }
+            .header-content { gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="logo.png" alt="Логотип Качаем бингу" class="logo" id="site-logo">
+            <h1 class="site-title">Качаем бингу</h1>
+        </div>
+    </header>
+
+    <nav class="navigation">
+        <div class="nav-container">
+            <div class="theme-tabs" id="theme-tabs"></div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="search-container">
+            <input type="text" class="search-input" id="search-input" placeholder="Поиск по фактам..." autocomplete="off">
+        </div>
+        <h2 class="theme-title" id="current-theme-title">Загружаем факты...</h2>
+        <div class="facts-grid" id="facts-grid">
+            <div class="loading">Загружаем данные</div>
+        </div>
+        <div class="pagination-container" id="pagination-container" style="display: none;">
+            <div class="items-per-page">
+                <span>Показать:</span>
+                <select id="items-per-page">
+                    <option value="12">12</option>
+                    <option value="24" selected>24</option>
+                    <option value="48">48</option>
+                    <option value="96">96</option>
+                    <option value="all">Все</option>
+                </select>
+            </div>
+            <button class="pagination-btn" id="prev-page" disabled>←</button>
+            <div class="pagination-info" id="pagination-info">Страница 1 из 1</div>
+            <button class="pagination-btn" id="next-page" disabled>→</button>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content" id="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Заголовок</h3>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-description" id="modal-description">Описание факта...</div>
+            <div class="modal-source" id="modal-source">
+                <strong>Источник:</strong>
+                <a href="#" class="source-link" id="source-link" target="_blank" rel="noopener">Перейти к источнику</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript код остался без изменений
+        class BingoFactsApp {
+            constructor() {
+                this.factsData = {}; this.currentTheme = ''; this.allFacts = [];
+                this.currentFacts = []; this.currentPage = 1; this.itemsPerPage = 24;
+                this.elements = {
+                    themeTabs: document.getElementById('theme-tabs'),
+                    factsGrid: document.getElementById('facts-grid'),
+                    themeTitle: document.getElementById('current-theme-title'),
+                    searchInput: document.getElementById('search-input'),
+                    modalOverlay: document.getElementById('modal-overlay'),
+                    modalTitle: document.getElementById('modal-title'),
+                    modalDescription: document.getElementById('modal-description'),
+                    sourceLink: document.getElementById('source-link'),
+                    closeModal: document.getElementById('close-modal'),
+                    logo: document.getElementById('site-logo'),
+                    paginationContainer: document.getElementById('pagination-container'),
+                    paginationInfo: document.getElementById('pagination-info'),
+                    prevPageBtn: document.getElementById('prev-page'),
+                    nextPageBtn: document.getElementById('next-page'),
+                    itemsPerPageSelect: document.getElementById('items-per-page')
+                };
+                this.init();
+            }
+            async init() {
+                this.setupEventListeners();
+                this.setupLogo();
+                await this.loadData();
+            }
+            setupLogo() {
+                const logo = this.elements.logo;
+                const logoPaths = ['logo.png', 'logo.jpg', 'logo.jpeg', 'logo.svg', 'logo.gif', 'logo'];
+                let currentIndex = 0;
+                const tryNextLogo = () => {
+                    if (currentIndex >= logoPaths.length) { logo.style.display = 'none'; return; }
+                    const testImage = new Image();
+                    const currentPath = logoPaths[currentIndex];
+                    testImage.onload = () => { logo.src = currentPath; logo.classList.add('visible'); };
+                    testImage.onerror = () => { currentIndex++; tryNextLogo(); };
+                    testImage.src = currentPath;
+                };
+                tryNextLogo();
+            }
+            setupEventListeners() {
+                this.elements.searchInput.addEventListener('input', (e) => this.searchFacts(e.target.value.trim()));
+                this.elements.closeModal.addEventListener('click', () => this.hideModal());
+                this.elements.modalOverlay.addEventListener('click', (e) => { if (e.target === this.elements.modalOverlay) this.hideModal(); });
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') this.hideModal(); });
+                this.elements.prevPageBtn.addEventListener('click', () => { if (this.currentPage > 1) { this.currentPage--; this.renderCurrentPage(); } });
+                this.elements.nextPageBtn.addEventListener('click', () => { if (this.currentPage < this.getTotalPages()) { this.currentPage++; this.renderCurrentPage(); } });
+                this.elements.itemsPerPageSelect.addEventListener('change', (e) => {
+                    this.itemsPerPage = e.target.value === 'all' ? 'all' : parseInt(e.target.value);
+                    this.currentPage = 1; this.renderCurrentPage();
+                });
+            }
+            async loadData() {
+                try {
+                    const PUBLISHED_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQaagaFlNNRGTl4nv4G4jhjnFmaeIgUa-IFWQ0_gdzi4Dns-Xmi4wp5-5WFyjJrNY-Ybl675wBvEdi4/pub?output=csv';
+                    this.elements.factsGrid.innerHTML = '<div class="loading">Загружаем данные</div>';
+                    const response = await fetch(PUBLISHED_CSV_URL);
+                    if (!response.ok) throw new Error('Не удалось загрузить данные. Проверьте, что таблица опубликована.');
+                    const csvText = await response.text();
+                    if (!csvText.trim()) throw new Error('Получен пустой файл. Проверьте данные в таблице.');
+                    Papa.parse(csvText, {
+                        header: true, skipEmptyLines: true, delimiter: ',',
+                        complete: (results) => {
+                            if (results.errors.length > 0) console.error('Ошибки парсинга:', results.errors);
+                            if (results.data.length === 0) this.showError('В таблице нет данных');
+                            else this.processData(results.data);
+                        },
+                        error: (error) => { this.showError('Ошибка обработки данных: ' + error.message); }
+                    });
+                } catch (error) { this.showError('Не удалось загрузить данные. Убедитесь, что ссылка верна и таблица опубликована в интернете.'); }
+            }
+            processData(rawData) {
+                this.factsData = {}; this.allFacts = [];
+                rawData.forEach((row) => {
+                    const cleanRow = {};
+                    Object.keys(row).forEach(key => { cleanRow[key.trim()] = row[key] ? row[key].trim() : ''; });
+                    const themeKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('тема') || k.toLowerCase().includes('theme'));
+                    const titleKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('бинго') || k.toLowerCase().includes('личность') || k.toLowerCase().includes('событие') || k.toLowerCase().includes('факт'));
+                    const descKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('описание') || k.toLowerCase().includes('description'));
+                    const sourceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('ссылка') || k.toLowerCase().includes('источник') || k.toLowerCase().includes('link') || k.toLowerCase().includes('source'));
+                    const theme = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
+                    const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
+                    if (theme && !this.factsData[theme]) { this.factsData[theme] = []; }
+                    if (theme && title) {
+                        const fact = {
+                            title: title,
+                            description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
+                            source: sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '',
+                            theme: theme
+                        };
+                        this.factsData[theme].push(fact); this.allFacts.push(fact);
+                    }
+                });
+                if (Object.keys(this.factsData).length === 0) { this.showError('Не удалось найти данные. Проверьте заголовки столбцов в таблице.'); return; }
+                this.renderThemeTabs(); this.showFirstTheme();
+            }
+            renderThemeTabs() {
+                const themes = Object.keys(this.factsData).sort();
+                this.elements.themeTabs.innerHTML = themes.map(theme => `<button class="theme-tab" data-theme="${theme}">${theme}</button>`).join('');
+                this.elements.themeTabs.addEventListener('click', (e) => { if (e.target.classList.contains('theme-tab')) this.switchTheme(e.target.dataset.theme); });
+            }
+            showFirstTheme() { const firstTheme = Object.keys(this.factsData)[0]; if (firstTheme) this.switchTheme(firstTheme); }
+            switchTheme(theme) {
+                this.currentTheme = theme; this.elements.searchInput.value = ''; this.currentPage = 1;
+                document.querySelectorAll('.theme-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.theme === theme));
+                this.currentFacts = [...this.factsData[theme]]; this.renderFacts(theme);
+            }
+            getTotalPages() { if (this.itemsPerPage === 'all') return 1; return Math.ceil(this.currentFacts.length / this.itemsPerPage); }
+            getCurrentPageFacts() {
+                if (this.itemsPerPage === 'all') return this.currentFacts;
+                const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+                return this.currentFacts.slice(startIndex, startIndex + this.itemsPerPage);
+            }
+            updatePagination() {
+                const totalItems = this.currentFacts.length;
+                const itemsToShow = (this.itemsPerPage === 'all') ? totalItems : this.itemsPerPage;
+                if (totalItems <= itemsToShow) { this.elements.paginationContainer.style.display = 'none'; return; }
+                this.elements.paginationContainer.style.display = 'flex';
+                const totalPages = this.getTotalPages();
+                if (this.itemsPerPage === 'all') { this.elements.paginationInfo.textContent = `Показано: ${totalItems} из ${totalItems}`; }
+                else {
+                    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+                    const endItem = Math.min(this.currentPage * this.itemsPerPage, totalItems);
+                    this.elements.paginationInfo.textContent = `${startItem}-${endItem} из ${totalItems} | Страница ${this.currentPage} из ${totalPages}`;
+                }
+                this.elements.prevPageBtn.disabled = this.currentPage <= 1 || this.itemsPerPage === 'all';
+                this.elements.nextPageBtn.disabled = this.currentPage >= totalPages || this.itemsPerPage === 'all';
+            }
+            renderCurrentPage() {
+                const pageData = this.getCurrentPageFacts();
+                this.renderFactCards(pageData); this.updatePagination();
+            }
+            renderFacts(themeTitle) { this.elements.themeTitle.textContent = themeTitle; this.renderCurrentPage(); }
+            renderFactCards(facts) {
+                if (!facts || facts.length === 0) { this.elements.factsGrid.innerHTML = '<div class="no-data">Факты не найдены</div>'; this.elements.paginationContainer.style.display = 'none'; return; }
+                this.elements.factsGrid.innerHTML = facts.map((fact, index) => `<div class="fact-card" data-fact-index="${index}"><h3 class="fact-title">${this.escapeHtml(fact.title)}</h3></div>`).join('');
+                this.elements.factsGrid.addEventListener('click', (e) => {
+                    const card = e.target.closest('.fact-card');
+                    if (card) { const index = parseInt(card.dataset.factIndex); this.showModal(this.getCurrentPageFacts()[index]); }
+                });
+            }
+            searchFacts(query) {
+                this.currentPage = 1;
+                if (!query) { if (this.currentTheme) { this.currentFacts = [...this.factsData[this.currentTheme]]; this.renderFacts(this.currentTheme); } return; }
+                const lowerCaseQuery = query.toLowerCase();
+                this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
+                this.renderFacts(`Результаты поиска: "${query}"`);
+            }
+            showModal(fact) {
+                this.elements.modalTitle.textContent = fact.title;
+                this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
+                this.elements.sourceLink.style.display = fact.source ? 'inline-flex' : 'none';
+                if (fact.source) this.elements.sourceLink.href = fact.source;
+                this.elements.modalOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+            hideModal() { this.elements.modalOverlay.classList.remove('active'); document.body.style.overflow = ''; }
+            formatDescription(text) { return text.split('\n').map(line => line.trim() ? `<p>${this.escapeHtml(line.trim())}</p>` : '').join(''); }
+            escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+            showError(message) { this.elements.factsGrid.innerHTML = `<div class="no-data">${message}</div>`; }
+        }
+        document.addEventListener('DOMContentLoaded', () => { new BingoFactsApp(); });
+    </script>
+</body>
+</html>
