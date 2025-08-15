@@ -91,13 +91,12 @@
             gap: 1.5rem;
         }
 
-        /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
         .theme-tabs {
-            display: flex; /* Изменили grid на flex для одной строки */
+            display: flex;
             gap: 1rem;
-            overflow-x: auto; /* Оставляем горизонтальную прокрутку */
+            overflow-x: auto;
             overflow-y: hidden;
-            padding-bottom: 1rem; /* Отступ для скроллбара */
+            padding-bottom: 1rem;
         }
 
         .theme-tabs::-webkit-scrollbar { height: 8px; }
@@ -109,7 +108,7 @@
             background: var(--white-bg);
             border: 2px solid var(--blue);
             color: var(--blue);
-            padding: 0.75rem 1.5rem; /* Слегка уменьшили вертикальный паддинг */
+            padding: 0.75rem 1.5rem;
             cursor: pointer;
             font-family: 'Montserrat', sans-serif;
             font-weight: 600;
@@ -120,11 +119,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            
-            white-space: nowrap; /* Запрещаем перенос текста, чтобы все кнопки были одной высоты */
-            flex-shrink: 0; /* Запрещаем кнопкам сжиматься */
+            white-space: nowrap;
+            flex-shrink: 0;
         }
-        /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
         .theme-tab:hover {
             background-color: var(--blue);
@@ -250,14 +247,38 @@
         }
         .close-btn:hover { background-color: var(--light-teal); color: var(--navy); }
         .modal-description { color: #000000; font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; }
-        .modal-source { padding-top: 1rem; border-top: 1px solid var(--light-teal); }
-        .source-link {
-            color: var(--teal); text-decoration: none; font-weight: 500;
-            display: inline-flex; align-items: center; gap: 0.5rem;
-            transition: color 0.3s ease;
+        
+        /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
+        .modal-source {
+            padding-top: 1rem;
+            border-top: 1px solid var(--light-teal);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem; /* Расстояние между ссылками */
         }
-        .source-link:hover { color: var(--blue); }
-        .source-link::after { content: '↗'; font-size: 1.1em; }
+        .source-link {
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: color 0.3s ease;
+            background-color: #f0f8ff;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--light-teal);
+        }
+        .source-link:hover {
+            color: var(--blue);
+            background-color: #e6f4ff;
+        }
+        .source-link::after {
+            content: '↗';
+            font-size: 1.1em;
+        }
+        /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
         .loading { text-align: center; padding: 3rem; color: var(--blue); font-size: 1.1rem; }
         .loading::after { content: '...'; animation: dots 1.5s infinite; }
@@ -349,15 +370,12 @@
                 <button class="close-btn" id="close-modal">&times;</button>
             </div>
             <div class="modal-description" id="modal-description">Описание факта...</div>
-            <div class="modal-source" id="modal-source">
-                <strong>Источник:</strong>
-                <a href="#" class="source-link" id="source-link" target="_blank" rel="noopener">Перейти к источнику</a>
-            </div>
+            <!-- Контейнер для ссылок, будет заполняться через JS -->
+            <div class="modal-source" id="modal-source"></div>
         </div>
     </div>
 
     <script>
-        // JavaScript код остался без изменений
         class BingoFactsApp {
             constructor() {
                 this.factsData = {}; this.currentTheme = ''; this.allFacts = [];
@@ -370,7 +388,8 @@
                     modalOverlay: document.getElementById('modal-overlay'),
                     modalTitle: document.getElementById('modal-title'),
                     modalDescription: document.getElementById('modal-description'),
-                    sourceLink: document.getElementById('source-link'),
+                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                    modalSource: document.getElementById('modal-source'), // Добавили контейнер для ссылок
                     closeModal: document.getElementById('close-modal'),
                     logo: document.getElementById('site-logo'),
                     paginationContainer: document.getElementById('pagination-container'),
@@ -442,12 +461,18 @@
                     const sourceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('ссылка') || k.toLowerCase().includes('источник') || k.toLowerCase().includes('link') || k.toLowerCase().includes('source'));
                     const theme = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
                     const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
+                    
+                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                    // Получаем строку со ссылками и делим ее по пробелу, чтобы получить массив
+                    const sourceString = sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '';
+                    const sources = sourceString ? sourceString.split(' ').filter(url => url.trim() !== '') : [];
+
                     if (theme && !this.factsData[theme]) { this.factsData[theme] = []; }
                     if (theme && title) {
                         const fact = {
                             title: title,
                             description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
-                            source: sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '',
+                            source: sources, // Теперь это массив ссылок
                             theme: theme
                         };
                         this.factsData[theme].push(fact); this.allFacts.push(fact);
@@ -504,27 +529,49 @@
             searchFacts(query) {
                 this.currentPage = 1;
                 if (!query) {
-                    if (this.currentTheme) {
-                        this.currentFacts = [...this.factsData[this.currentTheme]];
-                        this.renderFacts(this.currentTheme);
-                    }
+                    if (this.currentTheme) { this.currentFacts = [...this.factsData[this.currentTheme]]; this.renderFacts(this.currentTheme); }
                     return;
                 }
                 const lowerCaseQuery = query.toLowerCase();
-                this.currentFacts = this.allFacts.filter(fact => 
-                    fact.title.toLowerCase().includes(lowerCaseQuery) || 
-                    fact.description.toLowerCase().includes(lowerCaseQuery)
-                );
+                this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
+            
+            // --- ОСНОВНЫЕ ИЗМЕНЕНИЯ ЗДЕСЬ ---
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
                 this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
-                this.elements.sourceLink.style.display = fact.source ? 'inline-flex' : 'none';
-                if (fact.source) this.elements.sourceLink.href = fact.source;
+                
+                const sourceContainer = this.elements.modalSource;
+                sourceContainer.innerHTML = ''; // Очищаем старые ссылки
+
+                // Проверяем, есть ли ссылки в массиве
+                if (fact.source && fact.source.length > 0) {
+                    // Создаем заголовок
+                    const title = document.createElement('strong');
+                    title.textContent = fact.source.length > 1 ? 'Источники:' : 'Источник:';
+                    sourceContainer.appendChild(title);
+
+                    // Создаем по одной ссылке для каждого элемента в массиве
+                    fact.source.forEach((url, index) => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.className = 'source-link';
+                        link.target = '_blank';
+                        link.rel = 'noopener';
+                        link.textContent = `Источник ${index + 1}`;
+                        sourceContainer.appendChild(link);
+                    });
+                    
+                    sourceContainer.style.display = 'flex'; // Показываем блок
+                } else {
+                    sourceContainer.style.display = 'none'; // Прячем блок, если ссылок нет
+                }
+                
                 this.elements.modalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
+            
             hideModal() { this.elements.modalOverlay.classList.remove('active'); document.body.style.overflow = ''; }
             formatDescription(text) { return text.split('\n').map(line => line.trim() ? `<p>${this.escapeHtml(line.trim())}</p>` : '').join(''); }
             escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
