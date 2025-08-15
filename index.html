@@ -72,19 +72,24 @@
             margin: 0;
         }
 
+        /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
         .navigation {
             background-color: var(--white-bg);
-            padding: 1rem 0;
+            padding: 1.5rem 0; /* Немного увеличили отступы */
             position: sticky;
-            top: 113px;
+            top: 113px; /* Позиция под шапкой */
             z-index: 99;
             border-bottom: 1px solid var(--light-teal);
+            box-shadow: 0 2px 10px rgba(0, 18, 25, 0.05); /* Легкая тень для отделения */
         }
 
         .nav-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
+            display: flex; /* Включаем flex-контейнер */
+            flex-direction: column; /* Элементы будут идти друг под другом */
+            gap: 1.5rem; /* Расстояние между блоком тем и поиском */
         }
 
         .theme-tabs {
@@ -143,9 +148,10 @@
         }
 
         .search-container {
-            margin-bottom: 2rem;
+            /* Убрали margin-bottom, так как поиск теперь в панели навигации */
             text-align: center;
         }
+        /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
         .search-input {
             width: 100%;
@@ -308,16 +314,20 @@
         </div>
     </header>
 
+    <!-- --- ИЗМЕНЕНИЕ В СТРУКТУРЕ HTML --- -->
     <nav class="navigation">
         <div class="nav-container">
+            <!-- Блок с темами -->
             <div class="theme-tabs" id="theme-tabs"></div>
+            <!-- Строка поиска теперь здесь, внутри навигационной панели -->
+            <div class="search-container">
+                <input type="text" class="search-input" id="search-input" placeholder="Поиск по названию или описанию..." autocomplete="off">
+            </div>
         </div>
     </nav>
 
     <main class="main-content">
-        <div class="search-container">
-            <input type="text" class="search-input" id="search-input" placeholder="Поиск по фактам..." autocomplete="off">
-        </div>
+        <!-- Строка поиска была удалена отсюда -->
         <h2 class="theme-title" id="current-theme-title">Загружаем факты...</h2>
         <div class="facts-grid" id="facts-grid">
             <div class="loading">Загружаем данные</div>
@@ -338,6 +348,7 @@
             <button class="pagination-btn" id="next-page" disabled>→</button>
         </div>
     </main>
+    <!-- --- КОНЕЦ ИЗМЕНЕНИЙ В СТРУКТУРЕ HTML --- -->
 
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal-content" id="modal-content">
@@ -354,6 +365,7 @@
     </div>
 
     <script>
+        // JavaScript код остался без изменений, так как он уже готов к такой структуре
         class BingoFactsApp {
             constructor() {
                 this.factsData = {}; this.currentTheme = ''; this.allFacts = [];
@@ -497,8 +509,6 @@
                     if (card) { const index = parseInt(card.dataset.factIndex); this.showModal(this.getCurrentPageFacts()[index]); }
                 });
             }
-            
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             searchFacts(query) {
                 this.currentPage = 1;
                 if (!query) {
@@ -515,7 +525,6 @@
                 );
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
-            
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
                 this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
