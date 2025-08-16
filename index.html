@@ -8,7 +8,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- НОВАЯ БИБЛИОТЕКА ДЛЯ ФОРМАТИРОВАНИЯ -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
@@ -249,31 +248,17 @@
         }
         .close-btn:hover { background-color: var(--light-teal); color: var(--navy); }
         
-        /* СТИЛИ ДЛЯ ФОРМАТИРОВАННОГО ТЕКСТА */
         .modal-description { 
             color: #000000; 
             font-size: 1rem; 
             line-height: 1.7; 
             margin-bottom: 1.5rem; 
         }
-        .modal-description p {
-            margin-bottom: 1rem;
-        }
-        .modal-description ul, .modal-description ol {
-            padding-left: 2rem;
-            margin-bottom: 1rem;
-        }
-        .modal-description li {
-            margin-bottom: 0.5rem;
-        }
-        .modal-description a {
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-        }
-        .modal-description a:hover {
-            text-decoration: underline;
-        }
+        .modal-description p { margin-bottom: 1rem; }
+        .modal-description ul, .modal-description ol { padding-left: 2rem; margin-bottom: 1rem; }
+        .modal-description li { margin-bottom: 0.5rem; }
+        .modal-description a { color: var(--teal); text-decoration: none; font-weight: 500; }
+        .modal-description a:hover { text-decoration: underline; }
         
         .modal-source {
             padding-top: 1rem;
@@ -284,26 +269,13 @@
             gap: 0.75rem;
         }
         .source-link {
-            color: var(--teal);
-            text-decoration: none;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: color 0.3s ease;
-            background-color: #f0f8ff;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--light-teal);
+            color: var(--teal); text-decoration: none; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            transition: color 0.3s ease; background-color: #f0f8ff;
+            padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--light-teal);
         }
-        .source-link:hover {
-            color: var(--blue);
-            background-color: #e6f4ff;
-        }
-        .source-link::after {
-            content: '↗';
-            font-size: 1.1em;
-        }
+        .source-link:hover { color: var(--blue); background-color: #e6f4ff; }
+        .source-link::after { content: '↗'; font-size: 1.1em; }
 
         .loading { text-align: center; padding: 3rem; color: var(--blue); font-size: 1.1rem; }
         .loading::after { content: '...'; animation: dots 1.5s infinite; }
@@ -474,30 +446,50 @@
                 } catch (error) { this.showError('Не удалось загрузить данные. Убедитесь, что ссылка верна и таблица опубликована в интернете.'); }
             }
             
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ: Обработка нескольких тем ---
             processData(rawData) {
                 this.factsData = {}; this.allFacts = [];
                 rawData.forEach((row) => {
                     const cleanRow = {};
                     Object.keys(row).forEach(key => { cleanRow[key.trim()] = row[key] ? row[key].trim() : ''; });
+                    
                     const themeKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('тема') || k.toLowerCase().includes('theme'));
                     const titleKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('бинго') || k.toLowerCase().includes('личность') || k.toLowerCase().includes('событие') || k.toLowerCase().includes('факт'));
                     const descKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('описание') || k.toLowerCase().includes('description'));
                     const sourceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('ссылка') || k.toLowerCase().includes('источник') || k.toLowerCase().includes('link') || k.toLowerCase().includes('source'));
-                    const theme = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
+                    
                     const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
+                    const themeString = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
+                    
+                    if (!title || !themeString) {
+                        return; // Пропускаем строки без названия или темы
+                    }
+
+                    // Разделяем строку с темами по запятой и очищаем от лишних пробелов
+                    const themes = themeString.split(',').map(theme => theme.trim()).filter(theme => theme);
+
                     const sourceString = sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '';
                     const sources = sourceString ? sourceString.split(' ').filter(url => url.trim() !== '') : [];
-                    if (theme && !this.factsData[theme]) { this.factsData[theme] = []; }
-                    if (theme && title) {
-                        const fact = {
-                            title: title,
-                            description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
-                            source: sources,
-                            theme: theme
-                        };
-                        this.factsData[theme].push(fact); this.allFacts.push(fact);
-                    }
+                    
+                    const fact = {
+                        title: title,
+                        description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
+                        source: sources,
+                        themes: themes // Сохраняем список тем в самом факте
+                    };
+                    
+                    // Добавляем факт в каждую из его тем
+                    themes.forEach(theme => {
+                        if (!this.factsData[theme]) {
+                            this.factsData[theme] = [];
+                        }
+                        this.factsData[theme].push(fact);
+                    });
+                    
+                    // Добавляем факт в общий список для поиска (только один раз)
+                    this.allFacts.push(fact);
                 });
+
                 if (Object.keys(this.factsData).length === 0) { this.showError('Не удалось найти данные. Проверьте заголовки столбцов в таблице.'); return; }
                 this.renderThemeTabs(); this.showFirstTheme();
             }
@@ -558,13 +550,9 @@
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
             
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
-                
-                // Используем библиотеку marked для преобразования Markdown в HTML
                 this.elements.modalDescription.innerHTML = marked.parse(fact.description);
-                
                 const sourceContainer = this.elements.modalSource;
                 sourceContainer.innerHTML = '';
                 if (fact.source && fact.source.length > 0) {
