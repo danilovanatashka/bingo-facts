@@ -6,6 +6,9 @@
     <title>Качаем бингу - Изучайте бинго-факты интерактивно</title>
     <meta name="description" content="Интерактивный сайт для изучения бинго-фактов с двухуровневой системой тем">
     
+    <!-- ВОТ ЭТА СТРОЧКА ДОБАВЛЕНА для иконки на вкладке -->
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -47,19 +50,16 @@
             padding: 0 2rem;
             display: flex;
             align-items: center;
-            /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавляем position: relative --- */
             position: relative; 
         }
 
-        /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Увеличиваем логотип и меняем его позиционирование --- */
         .logo {
-            height: 80px; /* Было 60px */
+            height: 80px;
             width: auto;
             max-width: 120px;
             display: none;
             border-radius: 12px;
             object-fit: contain;
-            /* Новые свойства для "парящего" эффекта */
             position: absolute;
             left: 2rem;
             top: 50%;
@@ -68,13 +68,11 @@
 
         .logo.visible { display: block; }
 
-        /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Центрируем заголовок по всей ширине --- */
         .site-title {
             font-size: clamp(1.5rem, 4vw, 2.2rem);
             font-weight: 700;
             color: #000000;
             margin: 0;
-            /* Новые свойства для центрирования */
             width: 100%;
             text-align: center;
         }
@@ -276,7 +274,7 @@
         }
         @media (max-width: 480px) {
             .site-title { font-size: 1.2rem; }
-            .logo { display: none; } /* Скрываем лого на очень маленьких экранах, чтобы заголовок поместился */
+            .logo { display: none; }
         }
     </style>
 </head>
