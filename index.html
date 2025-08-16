@@ -8,6 +8,8 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- НОВАЯ БИБЛИОТЕКА ДЛЯ ФОРМАТИРОВАНИЯ -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
         :root {
@@ -99,20 +101,10 @@
             padding-bottom: 1rem;
         }
 
-        .theme-tabs::-webkit-scrollbar {
-            height: 14px;
-        }
-        .theme-tabs::-webkit-scrollbar-track {
-            background: #e0e0e0;
-            border-radius: 7px;
-        }
-        .theme-tabs::-webkit-scrollbar-thumb {
-            background: var(--teal);
-            border-radius: 7px;
-        }
-        .theme-tabs::-webkit-scrollbar-thumb:hover {
-            background: var(--blue);
-        }
+        .theme-tabs::-webkit-scrollbar { height: 14px; }
+        .theme-tabs::-webkit-scrollbar-track { background: #e0e0e0; border-radius: 7px; }
+        .theme-tabs::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 7px; }
+        .theme-tabs::-webkit-scrollbar-thumb:hover { background: var(--blue); }
 
         .theme-tab {
             background: var(--white-bg);
@@ -256,7 +248,32 @@
             border-radius: 50%; transition: all 0.3s ease;
         }
         .close-btn:hover { background-color: var(--light-teal); color: var(--navy); }
-        .modal-description { color: #000000; font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; }
+        
+        /* СТИЛИ ДЛЯ ФОРМАТИРОВАННОГО ТЕКСТА */
+        .modal-description { 
+            color: #000000; 
+            font-size: 1rem; 
+            line-height: 1.7; 
+            margin-bottom: 1.5rem; 
+        }
+        .modal-description p {
+            margin-bottom: 1rem;
+        }
+        .modal-description ul, .modal-description ol {
+            padding-left: 2rem;
+            margin-bottom: 1rem;
+        }
+        .modal-description li {
+            margin-bottom: 0.5rem;
+        }
+        .modal-description a {
+            color: var(--teal);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .modal-description a:hover {
+            text-decoration: underline;
+        }
         
         .modal-source {
             padding-top: 1rem;
@@ -377,7 +394,7 @@
                 <h3 class="modal-title" id="modal-title">Заголовок</h3>
                 <button class="close-btn" id="close-modal">&times;</button>
             </div>
-            <div class="modal-description" id="modal-description">Описание факта...</div>
+            <div class="modal-description" id="modal-description"></div>
             <div class="modal-source" id="modal-source"></div>
         </div>
     </div>
@@ -457,7 +474,6 @@
                 } catch (error) { this.showError('Не удалось загрузить данные. Убедитесь, что ссылка верна и таблица опубликована в интернете.'); }
             }
             
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             processData(rawData) {
                 this.factsData = {}; this.allFacts = [];
                 rawData.forEach((row) => {
@@ -469,16 +485,8 @@
                     const sourceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('ссылка') || k.toLowerCase().includes('источник') || k.toLowerCase().includes('link') || k.toLowerCase().includes('source'));
                     const theme = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
                     const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
-                    
                     const sourceString = sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '';
-                    
-                    // Возвращаем простую и надежную логику:
-                    // 1. Делим строку по пробелам.
-                    // 2. Убираем пустые элементы, если случайно поставили два пробела.
-                    const sources = sourceString 
-                        ? sourceString.split(' ').filter(url => url.trim() !== '') 
-                        : [];
-
+                    const sources = sourceString ? sourceString.split(' ').filter(url => url.trim() !== '') : [];
                     if (theme && !this.factsData[theme]) { this.factsData[theme] = []; }
                     if (theme && title) {
                         const fact = {
@@ -549,9 +557,14 @@
                 this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
+            
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
-                this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
+                
+                // Используем библиотеку marked для преобразования Markdown в HTML
+                this.elements.modalDescription.innerHTML = marked.parse(fact.description);
+                
                 const sourceContainer = this.elements.modalSource;
                 sourceContainer.innerHTML = '';
                 if (fact.source && fact.source.length > 0) {
@@ -574,8 +587,8 @@
                 this.elements.modalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
+            
             hideModal() { this.elements.modalOverlay.classList.remove('active'); document.body.style.overflow = ''; }
-            formatDescription(text) { return text.split('\n').map(line => line.trim() ? `<p>${this.escapeHtml(line.trim())}</p>` : '').join(''); }
             escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
             showError(message) { this.elements.factsGrid.innerHTML = `<div class="no-data">${message}</div>`; }
         }
