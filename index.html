@@ -47,25 +47,36 @@
             padding: 0 2rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавляем position: relative --- */
+            position: relative; 
         }
 
+        /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Увеличиваем логотип и меняем его позиционирование --- */
         .logo {
-            height: 60px;
+            height: 80px; /* Было 60px */
             width: auto;
-            max-width: 100px;
+            max-width: 120px;
             display: none;
             border-radius: 12px;
             object-fit: contain;
+            /* Новые свойства для "парящего" эффекта */
+            position: absolute;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
         .logo.visible { display: block; }
 
+        /* --- ИЗМЕНЕНИЕ ЗДЕСЬ: Центрируем заголовок по всей ширине --- */
         .site-title {
             font-size: clamp(1.5rem, 4vw, 2.2rem);
             font-weight: 700;
             color: #000000;
             margin: 0;
+            /* Новые свойства для центрирования */
+            width: 100%;
+            text-align: center;
         }
 
         .navigation {
@@ -257,11 +268,15 @@
         
         @media (max-width: 768px) {
             .header-content, .nav-container { padding: 0 1rem; }
-            .logo { height: 50px; }
+            .logo { height: 60px; left: 1rem; }
             .site-title { font-size: 1.5rem; }
             .main-content { padding: 1rem; }
             .facts-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .navigation { top: 66px; }
+            .navigation { top: 76px; }
+        }
+        @media (max-width: 480px) {
+            .site-title { font-size: 1.2rem; }
+            .logo { display: none; } /* Скрываем лого на очень маленьких экранах, чтобы заголовок поместился */
         }
     </style>
 </head>
@@ -448,7 +463,7 @@
                 } else {
                     this.elements.subThemeTabsContainer.classList.remove('visible');
                     this.currentSubTheme = null;
-                    this.currentFacts = [...themeData.facts];
+                    this.currentFacts = [...themeData.facts].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
                     this.renderFacts(themeName);
                 }
             }
@@ -472,33 +487,29 @@
                 });
             }
 
-            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             selectAllSubThemes() {
                 this.currentSubTheme = '__all__';
                 document.querySelectorAll('#sub-theme-tabs .theme-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.theme === '__all__'));
                 
-                // Начинаем с фактов, которые находятся прямо в основной теме (без подтем)
                 const parentFacts = this.factsData[this.currentMainTheme].facts || [];
                 const allFactsForTheme = [...parentFacts];
 
-                // Добавляем факты из всех подтем
                 const subThemes = this.factsData[this.currentMainTheme].subThemes;
                 for (const subThemeName in subThemes) {
                     allFactsForTheme.push(...subThemes[subThemeName]);
                 }
 
-                // Удаляем дубликаты, если один и тот же факт попал в разные категории
                 const uniqueFacts = Array.from(new Set(allFactsForTheme.map(f => f.title)))
                                        .map(title => allFactsForTheme.find(f => f.title === title));
 
-                this.currentFacts = uniqueFacts;
+                this.currentFacts = uniqueFacts.sort((a, b) => a.title.localeCompare(b.title, 'ru'));
                 this.renderFacts(`${this.currentMainTheme} - Все`);
             }
 
             selectSubTheme(subThemeName) {
                 this.currentSubTheme = subThemeName;
                 document.querySelectorAll('#sub-theme-tabs .theme-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.theme === subThemeName));
-                this.currentFacts = [...this.factsData[this.currentMainTheme].subThemes[subThemeName]];
+                this.currentFacts = [...this.factsData[this.currentMainTheme].subThemes[subThemeName]].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
                 this.renderFacts(`${this.currentMainTheme} - ${subThemeName}`);
             }
 
@@ -525,7 +536,9 @@
                     return;
                 }
                 const lowerCaseQuery = query.toLowerCase();
-                this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
+                this.currentFacts = this.allFacts
+                    .filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery))
+                    .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
                 this.renderFacts(`Результаты поиска: "${query}"`);
                 document.querySelectorAll('.theme-tab.active').forEach(t => t.classList.remove('active'));
                 this.elements.subThemeTabsContainer.classList.remove('visible');
