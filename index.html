@@ -6,7 +6,6 @@
     <title>Качаем бингу - Изучайте бинго-факты интерактивно</title>
     <meta name="description" content="Интерактивный сайт для изучения бинго-фактов с двухуровневой системой тем">
     
-    <!-- ВОТ ЭТА СТРОЧКА ДОБАВЛЕНА для иконки на вкладке -->
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -153,14 +152,18 @@
             color: var(--teal);
             font-size: 0.85rem;
         }
+        
+        /* --- ИЗМЕНЕНИЕ №1 ЗДЕСЬ: Добавляем белый цвет тексту при наведении --- */
         #sub-theme-tabs .theme-tab:hover {
             background-color: var(--teal);
+            color: white; /* Эта строка добавлена */
         }
         
+        /* --- ИЗМЕНЕНИЕ №2 ЗДЕСЬ: Меняем цвет текста в активном состоянии --- */
         #sub-theme-tabs .theme-tab.active {
             background-color: var(--cream);
             border-color: var(--yellow);
-            color: var(--navy);
+            color: #6B4F4B; /* Цвет изменен с var(--navy) на теплый коричневый */
         }
 
         .main-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
