@@ -148,10 +148,9 @@
             background-color: var(--teal);
         }
         
-        /* --- ИЗМЕНЕНИЕ ЗДЕСЬ --- */
         #sub-theme-tabs .theme-tab.active {
             background-color: var(--cream);
-            border-color: var(--yellow); /* Заменили яркий оранжевый на мягкий желтый */
+            border-color: var(--yellow);
             color: var(--navy);
         }
 
@@ -454,12 +453,43 @@
                 }
             }
 
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
             renderSubThemeTabs(mainThemeName) {
                 const subThemes = Object.keys(this.factsData[mainThemeName].subThemes).sort();
-                this.elements.subThemeTabs.innerHTML = subThemes.map(theme => `<button class="theme-tab" data-theme="${theme}">${theme}</button>`).join('');
+                const allButtonHtml = `<button class="theme-tab" data-theme="__all__">Все</button>`;
+                const subThemesHtml = subThemes.map(theme => `<button class="theme-tab" data-theme="${theme}">${theme}</button>`).join('');
+                
+                this.elements.subThemeTabs.innerHTML = allButtonHtml + subThemesHtml;
+                
                 this.elements.subThemeTabs.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('theme-tab')) this.selectSubTheme(e.target.dataset.theme);
+                    if (e.target.classList.contains('theme-tab')) {
+                        const theme = e.target.dataset.theme;
+                        if (theme === '__all__') {
+                            this.selectAllSubThemes();
+                        } else {
+                            this.selectSubTheme(theme);
+                        }
+                    }
                 });
+            }
+
+            // --- НОВАЯ ФУНКЦИЯ ---
+            selectAllSubThemes() {
+                this.currentSubTheme = '__all__';
+                document.querySelectorAll('#sub-theme-tabs .theme-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.theme === '__all__'));
+                
+                const allSubThemeFacts = [];
+                const subThemes = this.factsData[this.currentMainTheme].subThemes;
+                for (const subThemeName in subThemes) {
+                    allSubThemeFacts.push(...subThemes[subThemeName]);
+                }
+
+                // Удаляем дубликаты, если один факт попал в несколько подтем
+                const uniqueFacts = Array.from(new Set(allSubThemeFacts.map(f => f.title)))
+                                       .map(title => allSubThemeFacts.find(f => f.title === title));
+
+                this.currentFacts = uniqueFacts;
+                this.renderFacts(`${this.currentMainTheme} - Все`);
             }
 
             selectSubTheme(subThemeName) {
