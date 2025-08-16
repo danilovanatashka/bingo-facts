@@ -248,14 +248,13 @@
         .close-btn:hover { background-color: var(--light-teal); color: var(--navy); }
         .modal-description { color: #000000; font-size: 1rem; line-height: 1.7; margin-bottom: 1.5rem; }
         
-        /* --- ИЗМЕНЕНИЯ ЗДЕСЬ --- */
         .modal-source {
             padding-top: 1rem;
             border-top: 1px solid var(--light-teal);
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 0.75rem; /* Расстояние между ссылками */
+            gap: 0.75rem;
         }
         .source-link {
             color: var(--teal);
@@ -278,7 +277,6 @@
             content: '↗';
             font-size: 1.1em;
         }
-        /* --- КОНЕЦ ИЗМЕНЕНИЙ --- */
 
         .loading { text-align: center; padding: 3rem; color: var(--blue); font-size: 1.1rem; }
         .loading::after { content: '...'; animation: dots 1.5s infinite; }
@@ -370,7 +368,6 @@
                 <button class="close-btn" id="close-modal">&times;</button>
             </div>
             <div class="modal-description" id="modal-description">Описание факта...</div>
-            <!-- Контейнер для ссылок, будет заполняться через JS -->
             <div class="modal-source" id="modal-source"></div>
         </div>
     </div>
@@ -388,8 +385,7 @@
                     modalOverlay: document.getElementById('modal-overlay'),
                     modalTitle: document.getElementById('modal-title'),
                     modalDescription: document.getElementById('modal-description'),
-                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                    modalSource: document.getElementById('modal-source'), // Добавили контейнер для ссылок
+                    modalSource: document.getElementById('modal-source'),
                     closeModal: document.getElementById('close-modal'),
                     logo: document.getElementById('site-logo'),
                     paginationContainer: document.getElementById('pagination-container'),
@@ -450,6 +446,8 @@
                     });
                 } catch (error) { this.showError('Не удалось загрузить данные. Убедитесь, что ссылка верна и таблица опубликована в интернете.'); }
             }
+            
+            // --- ОСНОВНЫЕ ИЗМЕНЕНИЯ ЗДЕСЬ ---
             processData(rawData) {
                 this.factsData = {}; this.allFacts = [];
                 rawData.forEach((row) => {
@@ -462,17 +460,21 @@
                     const theme = themeKeys.length > 0 ? cleanRow[themeKeys[0]] : '';
                     const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
                     
-                    // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                    // Получаем строку со ссылками и делим ее по пробелу, чтобы получить массив
                     const sourceString = sourceKeys.length > 0 ? cleanRow[sourceKeys[0]] : '';
-                    const sources = sourceString ? sourceString.split(' ').filter(url => url.trim() !== '') : [];
+                    
+                    // Умная фильтрация:
+                    // 1. Делим строку по пробелам.
+                    // 2. Оставляем только те части, которые начинаются с "http".
+                    const sources = sourceString 
+                        ? sourceString.split(' ').filter(url => url.trim().startsWith('http')) 
+                        : [];
 
                     if (theme && !this.factsData[theme]) { this.factsData[theme] = []; }
                     if (theme && title) {
                         const fact = {
                             title: title,
                             description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
-                            source: sources, // Теперь это массив ссылок
+                            source: sources, // Теперь это массив только настоящих ссылок
                             theme: theme
                         };
                         this.factsData[theme].push(fact); this.allFacts.push(fact);
@@ -481,6 +483,7 @@
                 if (Object.keys(this.factsData).length === 0) { this.showError('Не удалось найти данные. Проверьте заголовки столбцов в таблице.'); return; }
                 this.renderThemeTabs(); this.showFirstTheme();
             }
+            
             renderThemeTabs() {
                 const themes = Object.keys(this.factsData).sort();
                 this.elements.themeTabs.innerHTML = themes.map(theme => `<button class="theme-tab" data-theme="${theme}">${theme}</button>`).join('');
@@ -536,23 +539,15 @@
                 this.currentFacts = this.allFacts.filter(fact => fact.title.toLowerCase().includes(lowerCaseQuery) || fact.description.toLowerCase().includes(lowerCaseQuery));
                 this.renderFacts(`Результаты поиска: "${query}"`);
             }
-            
-            // --- ОСНОВНЫЕ ИЗМЕНЕНИЯ ЗДЕСЬ ---
             showModal(fact) {
                 this.elements.modalTitle.textContent = fact.title;
                 this.elements.modalDescription.innerHTML = this.formatDescription(fact.description);
-                
                 const sourceContainer = this.elements.modalSource;
-                sourceContainer.innerHTML = ''; // Очищаем старые ссылки
-
-                // Проверяем, есть ли ссылки в массиве
+                sourceContainer.innerHTML = '';
                 if (fact.source && fact.source.length > 0) {
-                    // Создаем заголовок
                     const title = document.createElement('strong');
                     title.textContent = fact.source.length > 1 ? 'Источники:' : 'Источник:';
                     sourceContainer.appendChild(title);
-
-                    // Создаем по одной ссылке для каждого элемента в массиве
                     fact.source.forEach((url, index) => {
                         const link = document.createElement('a');
                         link.href = url;
@@ -562,16 +557,13 @@
                         link.textContent = `Источник ${index + 1}`;
                         sourceContainer.appendChild(link);
                     });
-                    
-                    sourceContainer.style.display = 'flex'; // Показываем блок
+                    sourceContainer.style.display = 'flex';
                 } else {
-                    sourceContainer.style.display = 'none'; // Прячем блок, если ссылок нет
+                    sourceContainer.style.display = 'none';
                 }
-                
                 this.elements.modalOverlay.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
-            
             hideModal() { this.elements.modalOverlay.classList.remove('active'); document.body.style.overflow = ''; }
             formatDescription(text) { return text.split('\n').map(line => line.trim() ? `<p>${this.escapeHtml(line.trim())}</p>` : '').join(''); }
             escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
