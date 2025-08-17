@@ -1,3 +1,18 @@
+<!--
+    Copyright 2025 Данилова Наталья
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -153,17 +168,15 @@
             font-size: 0.85rem;
         }
         
-        /* --- ИЗМЕНЕНИЕ №1 ЗДЕСЬ: Добавляем белый цвет тексту при наведении --- */
         #sub-theme-tabs .theme-tab:hover {
             background-color: var(--teal);
-            color: white; /* Эта строка добавлена */
+            color: white;
         }
         
-        /* --- ИЗМЕНЕНИЕ №2 ЗДЕСЬ: Меняем цвет текста в активном состоянии --- */
         #sub-theme-tabs .theme-tab.active {
             background-color: var(--cream);
             border-color: var(--yellow);
-            color: #6B4F4B; /* Цвет изменен с var(--navy) на теплый коричневый */
+            color: #6B4F4B;
         }
 
         .main-content { max-width: 1200px; margin: 0 auto; padding: 2rem; }
@@ -278,6 +291,24 @@
         @media (max-width: 480px) {
             .site-title { font-size: 1.2rem; }
             .logo { display: none; }
+        }
+
+        /* Стили для футера */
+        .site-footer {
+            text-align: center;
+            padding: 1.5rem 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid var(--light-teal); /* Цвет как у рамки поля поиска */
+            color: var(--blue);
+            font-size: 0.8rem; /* Меньше чем у подтем (0.85rem) */
+        }
+        .site-footer a {
+            color: var(--teal);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .site-footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -575,5 +606,10 @@
         }
         document.addEventListener('DOMContentLoaded', () => new BingoFactsApp());
     </script>
+
+    <footer class="site-footer">
+        <p>&copy; 2025 Данилова Наталья. Распространяется по лицензии <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache 2.0</a>.</p>
+    </footer>
+
 </body>
 </html>
