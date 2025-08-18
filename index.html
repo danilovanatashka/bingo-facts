@@ -1,18 +1,3 @@
-<!--
-    Copyright 2025 Данилова Наталья
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
--->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -204,7 +189,7 @@
             background-color: var(--white-bg); border: 2px solid var(--light-teal);
             border-radius: 16px; padding: 1.5rem; cursor: pointer;
             transition: all 0.3s ease; position: relative; overflow: hidden;
-            display: flex; flex-direction: column; justify-content: center; min-height: 80px;
+            display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;
         }
         .fact-card:hover {
             transform: translateY(-5px);
@@ -224,6 +209,16 @@
             font-size: 1.25rem; font-weight: 600; color: #000000;
             margin: 0; line-height: 1.3; text-align: center; word-break: break-word;
         }
+        
+        /* --- НОВЫЙ СТИЛЬ ДЛЯ ОТМЕТОК НА КАРТОЧКЕ --- */
+        .fact-answer-form {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--blue);
+            text-align: center;
+            margin-top: 1rem;
+        }
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(0, 18, 25, 0.7);
@@ -292,24 +287,6 @@
             .site-title { font-size: 1.2rem; }
             .logo { display: none; }
         }
-
-        /* Стили для футера */
-        .site-footer {
-            text-align: center;
-            padding: 1.5rem 1rem;
-            margin-top: 1rem;
-            border-top: 1px solid var(--light-teal); /* Цвет как у рамки поля поиска */
-            color: var(--blue);
-            font-size: 0.8rem; /* Меньше чем у подтем (0.85rem) */
-        }
-        .site-footer a {
-            color: var(--teal);
-            font-weight: 500;
-            text-decoration: none;
-        }
-        .site-footer a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -353,6 +330,7 @@
             constructor() {
                 this.factsData = {}; this.allFacts = []; this.currentFacts = [];
                 this.currentMainTheme = null; this.currentSubTheme = null;
+                this.answerFormThemes = new Set(); // --- НОВОЕ: Хранилище для тем из "Формы ответа"
                 
                 this.elements = {
                     mainThemeTabs: document.getElementById('main-theme-tabs'),
@@ -420,7 +398,7 @@
             }
             
             processData(rawData) {
-                this.factsData = {}; this.allFacts = [];
+                this.factsData = {}; this.allFacts = []; this.answerFormThemes.clear();
                 rawData.forEach((row) => {
                     const cleanRow = {};
                     Object.keys(row).forEach(key => { cleanRow[key.trim()] = row[key] ? row[key].trim() : ''; });
@@ -431,19 +409,27 @@
                     const descKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('описание'));
                     const sourceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('ссылка'));
                     const importanceKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('важность'));
+                    // --- НОВОЕ: Ищем столбец "Форма ответа" ---
+                    const answerFormKeys = Object.keys(cleanRow).filter(k => k.toLowerCase().includes('форма ответа'));
                     
                     const title = titleKeys.length > 0 ? cleanRow[titleKeys[0]] : '';
                     const mainThemeString = mainThemeKeys.length > 0 ? cleanRow[mainThemeKeys[0]] : '';
                     const subThemeString = subThemeKeys.length > 0 ? cleanRow[subThemeKeys[0]] : '';
                     const importanceValue = importanceKeys.length > 0 ? cleanRow[importanceKeys[0]] : '';
+                    const answerFormString = answerFormKeys.length > 0 ? cleanRow[answerFormKeys[0]] : '';
 
                     if (!title || !mainThemeString) return;
+
+                    // --- НОВОЕ: Обрабатываем "Форму ответа" ---
+                    const answerForms = answerFormString.split(',').map(t => t.trim()).filter(t => t);
+                    answerForms.forEach(form => this.answerFormThemes.add(form));
 
                     const fact = {
                         title: title,
                         description: descKeys.length > 0 ? cleanRow[descKeys[0]] : 'Описание не указано',
                         source: (sourceKeys.length > 0 && cleanRow[sourceKeys[0]]) ? cleanRow[sourceKeys[0]].split(' ').filter(url => url.trim() !== '') : [],
-                        isImportant: importanceValue.toLowerCase() === 'да'
+                        isImportant: importanceValue.toLowerCase() === 'да',
+                        answerForms: answerForms // --- НОВОЕ: Сохраняем отметки в объекте факта
                     };
                     this.allFacts.push(fact);
 
@@ -469,16 +455,31 @@
                     });
                 });
 
-                if (Object.keys(this.factsData).length === 0) { this.showError('Данные не найдены.'); return; }
+                if (Object.keys(this.factsData).length === 0 && this.answerFormThemes.size === 0) { this.showError('Данные не найдены.'); return; }
                 this.renderMainThemeTabs();
                 this.selectMainTheme(Object.keys(this.factsData).sort()[0]);
             }
 
             renderMainThemeTabs() {
-                const themes = Object.keys(this.factsData).sort();
-                this.elements.mainThemeTabs.innerHTML = themes.map(theme => `<button class="theme-tab" data-theme="${theme}">${theme}</button>`).join('');
+                const contentThemes = Object.keys(this.factsData).sort();
+                const tagThemes = Array.from(this.answerFormThemes).sort();
+
+                const contentHtml = contentThemes.map(theme => `<button class="theme-tab" data-theme-type="content" data-theme="${theme}">${theme}</button>`).join('');
+                const tagsHtml = tagThemes.map(theme => `<button class="theme-tab" data-theme-type="tag" data-theme="${theme}">${theme}</button>`).join('');
+                
+                this.elements.mainThemeTabs.innerHTML = contentHtml + tagsHtml;
+
                 this.elements.mainThemeTabs.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('theme-tab')) this.selectMainTheme(e.target.dataset.theme);
+                    const button = e.target.closest('.theme-tab');
+                    if (button) {
+                        const themeType = button.dataset.themeType;
+                        const themeName = button.dataset.theme;
+                        if (themeType === 'content') {
+                            this.selectMainTheme(themeName);
+                        } else if (themeType === 'tag') {
+                            this.selectTagTheme(themeName);
+                        }
+                    }
                 });
             }
 
@@ -498,6 +499,23 @@
                     this.currentFacts = [...themeData.facts].sort((a, b) => a.title.localeCompare(b.title, 'ru'));
                     this.renderFacts(themeName);
                 }
+            }
+            
+            // --- НОВАЯ ФУНКЦИЯ для выбора темы из "Формы ответа" ---
+            selectTagTheme(themeName) {
+                this.currentMainTheme = themeName;
+                this.elements.searchInput.value = '';
+                document.querySelectorAll('#main-theme-tabs .theme-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.theme === themeName));
+                
+                // Скрываем подтемы, так как у этих тем их нет
+                this.elements.subThemeTabsContainer.classList.remove('visible');
+                
+                // Фильтруем все факты по наличию нужной отметки
+                this.currentFacts = this.allFacts
+                    .filter(fact => fact.answerForms.includes(themeName))
+                    .sort((a, b) => a.title.localeCompare(b.title, 'ru'));
+                
+                this.renderFacts(themeName);
             }
 
             renderSubThemeTabs(mainThemeName) {
@@ -555,11 +573,17 @@
                     this.elements.factsGrid.innerHTML = '<div class="no-data">Факты не найдены</div>';
                     return;
                 }
-                this.elements.factsGrid.innerHTML = facts.map((fact, index) => 
-                    `<div class="fact-card ${fact.isImportant ? 'important-card' : ''}" data-index="${index}">
-                        <h3 class="fact-title">${this.escapeHtml(fact.title)}</h3>
-                    </div>`
-                ).join('');
+                this.elements.factsGrid.innerHTML = facts.map((fact, index) => {
+                    // --- НОВОЕ: Создаем HTML для отметок ---
+                    const answerFormHtml = fact.answerForms.length > 0 
+                        ? `<div class="fact-answer-form">${this.escapeHtml(fact.answerForms.join(', '))}</div>` 
+                        : '';
+
+                    return `<div class="fact-card ${fact.isImportant ? 'important-card' : ''}" data-index="${index}">
+                                <h3 class="fact-title">${this.escapeHtml(fact.title)}</h3>
+                                ${answerFormHtml}
+                            </div>`;
+                }).join('');
             }
 
             searchFacts(query) {
@@ -606,10 +630,5 @@
         }
         document.addEventListener('DOMContentLoaded', () => new BingoFactsApp());
     </script>
-
-    <footer class="site-footer">
-        <p>&copy; 2025 Данилова Наталья. Распространяется по лицензии <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache 2.0</a>.</p>
-    </footer>
-
 </body>
 </html>
