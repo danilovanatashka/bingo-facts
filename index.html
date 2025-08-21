@@ -279,8 +279,15 @@
             padding: 2rem;
             margin-top: 2rem;
             font-size: 0.85rem;
-            color: #0A9396; /* --- ЦВЕТ ИЗМЕНЕН ЗДЕСЬ --- */
+            color: #0A9396;
             border-top: 1px solid #e9ecef;
+        }
+
+        /* --- НОВЫЙ СТИЛЬ ДЛЯ ССЫЛКИ В ПОДВАЛЕ --- */
+        .site-footer a {
+            color: inherit; /* Наследует бирюзовый цвет от родителя */
+            text-decoration: none; /* Убирает подчеркивание */
+            font-weight: 600; /* Делает текст полужирным */
         }
 
         @media (max-width: 768px) {
@@ -334,7 +341,8 @@
     </div>
 
     <footer class="site-footer">
-        <p>© 2025 Данилова Наталья. Распространяется по лицензии Apache 2.0.</p>
+        <!-- --- ИЗМЕНЕНИЕ ЗДЕСЬ: Добавлена ссылка --- -->
+        <p>© 2025 Данилова Наталья. Распространяется по лицензии <a href="http://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener">Apache 2.0</a>.</p>
     </footer>
 
     <script>
